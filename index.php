@@ -1,17 +1,14 @@
 <?php
-// Evitar que errores de PHP rompan la comunicación
-error_reporting(E_ALL);
-ini_set('display_errors', 0);
-
+// 1. Configuración inicial
 $token = "8547369590:AAFnITTBYETjRopmY7U7hJREcnnBEKR5S3o";
 
-// Leer datos de Telegram
+// 2. Capturar datos de Telegram
 $input = file_get_contents("php://input");
 $update = json_decode($input, true);
 
-// Respuesta visual para ti en el navegador
+// Respuesta para el navegador (para saber que el archivo está ahí)
 if (!$update) {
-    echo "Servidor de Pasillos Online ✅. Telegram está conectado.";
+    echo "Servidor listo y esperando a Telegram. Token: " . substr($token, 0, 5) . "xxx";
     exit;
 }
 
@@ -19,6 +16,9 @@ $chatId = $update["message"]["chat"]["id"] ?? null;
 $message = $update["message"]["text"] ?? "";
 
 if ($chatId) {
+    $mensajeLimpio = mb_strtolower(trim($message));
+    
+    // Lógica de pasillos
     $productos = [
         "pasillo 1" => ["carne", "queso", "jamon", "jamón"],
         "pasillo 2" => ["leche", "yogurth", "yogurt", "cereal"],
@@ -27,11 +27,10 @@ if ($chatId) {
         "pasillo 5" => ["detergente", "lavaloza"]
     ];
 
-    $mensajeLimpio = mb_strtolower(trim($message));
-    $response = "Lo siento, no encuentro ese producto. Prueba con: Carne, Leche o Pan.";
+    $response = "No encuentro ese producto. Prueba con: Carne, Leche o Pan.";
 
     if ($mensajeLimpio == "/start") {
-        $response = "¡Hola! Bienvenido al buscador de pasillos. ¿Qué producto buscas?";
+        $response = "¡Hola! Bienvenido al bot del súper. ¿Qué buscas?";
     } else {
         foreach ($productos as $pasillo => $lista) {
             if (in_array($mensajeLimpio, $lista)) {
@@ -41,9 +40,17 @@ if ($chatId) {
         }
     }
 
-    // ENVÍO DE RESPUESTA (Método ultra-directo)
-    $url = "https://api.telegram.org/bot$token/sendMessage?chat_id=$chatId&text=" . urlencode($response);
-    
-    // Esto ejecuta la URL de envío
-    file_get_contents($url);
+    // 3. ENVÍO POR cURL (A prueba de fallos)
+    $url = "https://api.telegram.org/bot$token/sendMessage";
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+        'chat_id' => $chatId,
+        'text' => $response
+    ]));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Importante para Render
+    curl_exec($ch);
+    curl_close($ch);
 }
