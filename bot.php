@@ -12,15 +12,32 @@ if (!$chatId) {
     exit;
 }
 
-$mensajeLimpio = trim($message);
-$response = "No tengo una respuesta configurada para eso"; 
+// Convertimos a minúsculas para que sea más fácil comparar
+$mensajeLimpio = trim(mb_strtolower($message));
+$response = "Lo siento, no encuentro ese producto. Intenta con: Carne, Leche o Pan."; 
 
 if ($mensajeLimpio == "/start") {
-    $response = "Bienvenido ...";
-} elseif ($mensajeLimpio == "como me ira en la sumativa?") {
-    $response = "Te ira muy bien";
-}elseif ($mensajeLimpio == "hola") {
-    $response = "Hola, espero te encuentres muy bien , en que te puedo ayudar hoy?";
+    $response = "¡Hola! Bienvenido al buscador de pasillos del supermercado. ¿Qué producto estás buscando?";
+} 
+// Pasillo 1: Carnes
+elseif ($mensajeLimpio == "carne" || $mensajeLimpio == "pollo" || $mensajeLimpio == "jamon") {
+    $response = "El producto " . ucfirst($mensajeLimpio) . " lo puedes encontrar en el Pasillo 1 🥩";
+}
+// Pasillo 2: Lácteos
+elseif ($mensajeLimpio == "leche" || $mensajeLimpio == "yogurt" || $mensajeLimpio == "queso") {
+    $response = "El producto " . ucfirst($mensajeLimpio) . " lo puedes encontrar en el Pasillo 2 🥛";
+}
+// Pasillo 3: Bebidas
+elseif ($mensajeLimpio == "bebida" || $mensajeLimpio == "jugo" || $mensajeLimpio == "agua") {
+    $response = "El producto " . ucfirst($mensajeLimpio) . " lo puedes encontrar en el Pasillo 3 🥤";
+}
+// Pasillo 4: Panadería
+elseif ($mensajeLimpio == "pan" || $mensajeLimpio == "galletas" || $mensajeLimpio == "torta") {
+    $response = "El producto " . ucfirst($mensajeLimpio) . " lo puedes encontrar en el Pasillo 4 🍞";
+}
+// Pasillo 5: Limpieza
+elseif ($mensajeLimpio == "detergente" || $mensajeLimpio == "jabon" || $mensajeLimpio == "cloro") {
+    $response = "El producto " . ucfirst($mensajeLimpio) . " lo puedes encontrar en el Pasillo 5 🧼";
 }
 
 enviarMensaje($chatId, $response, $token);
@@ -37,7 +54,7 @@ function enviarMensaje($chatId, $text, $token) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']); // Especificamos JSON
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     
     $result = curl_exec($ch);
