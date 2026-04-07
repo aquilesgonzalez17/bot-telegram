@@ -1,47 +1,27 @@
 <?php
-// 1. Configuración inicial
 $token = "8547369590:AAFnITTBYETjRopmY7U7hJREcnnBEKR5S3o";
 
-// 2. Capturar datos de Telegram
+// 1. Obtener la entrada de Telegram
 $input = file_get_contents("php://input");
 $update = json_decode($input, true);
 
-// Respuesta para el navegador (para saber que el archivo está ahí)
+// Si entras tú por el navegador
 if (!$update) {
-    echo "Servidor listo y esperando a Telegram. Token: " . substr($token, 0, 5) . "xxx";
-    exit;
+    die("Esperando mensaje de Telegram... Si ves esto, el archivo está bien.");
 }
 
+// 2. Extraer el Chat ID con seguridad
+// Buscamos el ID ya sea en un mensaje nuevo o en un comando
 $chatId = $update["message"]["chat"]["id"] ?? null;
-$message = $update["message"]["text"] ?? "";
+$text = $update["message"]["text"] ?? "";
 
 if ($chatId) {
-    $mensajeLimpio = mb_strtolower(trim($message));
-    
-    // Lógica de pasillos
-    $productos = [
-        "pasillo 1" => ["carne", "queso", "jamon", "jamón"],
-        "pasillo 2" => ["leche", "yogurth", "yogurt", "cereal"],
-        "pasillo 3" => ["bebidas", "jugos", "jugo"],
-        "pasillo 4" => ["pan", "pasteles", "tortas", "torta"],
-        "pasillo 5" => ["detergente", "lavaloza"]
-    ];
+    // Definir la respuesta
+    $response = "¡Te encontré! Tu ID es: $chatId. Buscaste: $text";
 
-    $response = "No encuentro ese producto. Prueba con: Carne, Leche o Pan.";
-
-    if ($mensajeLimpio == "/start") {
-        $response = "¡Hola! Bienvenido al bot del súper. ¿Qué buscas?";
-    } else {
-        foreach ($productos as $pasillo => $lista) {
-            if (in_array($mensajeLimpio, $lista)) {
-                $response = "El producto " . ucfirst($mensajeLimpio) . " está en el " . ucfirst($pasillo) . ". 🛒";
-                break;
-            }
-        }
-    }
-
-    // 3. ENVÍO POR cURL (A prueba de fallos)
+    // 3. Enviar mensaje de vuelta usando cURL (más seguro en Render)
     $url = "https://api.telegram.org/bot$token/sendMessage";
+    
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_POST, 1);
@@ -50,7 +30,13 @@ if ($chatId) {
         'text' => $response
     ]));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Importante para Render
-    curl_exec($ch);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    
+    $result = curl_exec($ch);
     curl_close($ch);
+    
+    // Ver el resultado en los logs de Render para saber si falló de nuevo
+    error_log("Respuesta de Telegram: " . $result);
+} else {
+    error_log("No se pudo detectar un Chat ID válido.");
 }
