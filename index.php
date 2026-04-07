@@ -1,42 +1,44 @@
 <?php
 $token = "8547369590:AAFnITTBYETjRopmY7U7hJREcnnBEKR5S3o";
 
-// 1. Obtener la entrada de Telegram
-$input = file_get_contents("php://input");
-$update = json_decode($input, true);
+// 1. Ir a buscar los mensajes a Telegram manualmente
+$urlUpdates = "https://api.telegram.org/bot$token/getUpdates?offset=-1";
+$response = file_get_contents($urlUpdates);
+$data = json_decode($response, true);
 
-// Si entras tú por el navegador
-if (!$update) {
-    die("Esperando mensaje de Telegram... Si ves esto, el archivo está bien.");
-}
+echo "<h1>Estado del Bot: Buscando mensajes...</h1>";
 
-// 2. Extraer el Chat ID con seguridad
-// Buscamos el ID ya sea en un mensaje nuevo o en un comando
-$chatId = $update["message"]["chat"]["id"] ?? null;
-$text = $update["message"]["text"] ?? "";
+if (isset($data["result"][0])) {
+    $lastUpdate = $data["result"][0];
+    $chatId = $lastUpdate["message"]["chat"]["id"];
+    $text = strtolower($lastUpdate["message"]["text"]);
+    $updateId = $lastUpdate["update_id"];
 
-if ($chatId) {
-    // Definir la respuesta
-    $response = "¡Te encontré! Tu ID es: $chatId. Buscaste: $text";
+    echo "Último mensaje recibido: " . $text . " de Chat ID: " . $chatId;
 
-    // 3. Enviar mensaje de vuelta usando cURL (más seguro en Render)
-    $url = "https://api.telegram.org/bot$token/sendMessage";
+    // 2. Lógica de pasillos
+    $productos = [
+        "pasillo 1" => ["carne", "queso", "jamon", "jamón"],
+        "pasillo 2" => ["leche", "yogurth", "yogurt", "cereal"],
+        "pasillo 3" => ["bebidas", "jugos", "jugo"],
+        "pasillo 4" => ["pan", "pasteles", "tortas", "torta"],
+        "pasillo 5" => ["detergente", "lavaloza"]
+    ];
+
+    $respuesta = "No encuentro ese producto. Prueba con: Carne, Leche o Pan.";
+    foreach ($productos as $pasillo => $lista) {
+        if (in_array($text, $lista)) {
+            $respuesta = "El producto " . ucfirst($text) . " está en el " . ucfirst($pasillo) . ". 🛒";
+            break;
+        }
+    }
+
+    // 3. Enviar la respuesta
+    $urlSend = "https://api.telegram.org/bot$token/sendMessage?chat_id=$chatId&text=" . urlencode($respuesta);
+    file_get_contents($urlSend);
     
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
-        'chat_id' => $chatId,
-        'text' => $response
-    ]));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    
-    $result = curl_exec($ch);
-    curl_close($ch);
-    
-    // Ver el resultado en los logs de Render para saber si falló de nuevo
-    error_log("Respuesta de Telegram: " . $result);
+    echo "<br><b>Respuesta enviada con éxito.</b>";
 } else {
-    error_log("No se pudo detectar un Chat ID válido.");
+    echo "<br>No hay mensajes nuevos en Telegram.";
 }
+?>
