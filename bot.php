@@ -1,5 +1,5 @@
 <?php
-$token = "8547369590:AAFnITTBYETjRopmY7U7hJREcnnBEKR5S3o";
+$token = "8574089167:AAEiM5QvD8Ic2b2nNGZry_M4lPIj0I2e_a4";
 
 $input = file_get_contents("php://input");
 file_put_contents("log.txt", "Fecha: " . date("Y-m-d H:i:s") . " - Input: " . $input . PHP_EOL, FILE_APPEND);
