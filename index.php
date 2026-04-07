@@ -1,23 +1,23 @@
 <?php
-// 1. Configuración del Token
+// Desactivar reporte de errores para que no ensucien la respuesta de Telegram
+error_reporting(0);
+
 $token = "8547369590:AAFnITTBYETjRopmY7U7hJREcnnBEKR5S3o";
 
-// 2. Capturar lo que envía Telegram
+// Leer el mensaje que envía Telegram
 $input = file_get_contents("php://input");
 $update = json_decode($input, true);
 
-// Si entras por el navegador, verás este mensaje (útil para pruebas)
+// Si alguien entra por el navegador, verá esto
 if (!$update) {
-    echo "Servidor Online. Esperando mensajes de Telegram...";
+    echo "Bot Online y Webhook configurado correctamente.";
     exit;
 }
 
-// 3. Extraer datos del mensaje
 $chatId = $update["message"]["chat"]["id"] ?? null;
 $message = $update["message"]["text"] ?? "";
 
 if ($chatId) {
-    // 4. Lógica de pasillos
     $productos = [
         "pasillo 1" => ["carne", "queso", "jamon", "jamón"],
         "pasillo 2" => ["leche", "yogurth", "yogurt", "cereal"],
@@ -40,19 +40,21 @@ if ($chatId) {
         }
     }
 
-    // 5. Enviar respuesta usando cURL (el método más seguro en Apache)
+    // ENVIAR RESPUESTA A TELEGRAM
     $url = "https://api.telegram.org/bot$token/sendMessage";
     $postData = [
         'chat_id' => $chatId,
         'text' => $response
     ];
 
+    // Usamos cURL con opciones de seguridad desactivadas para evitar bloqueos de Render
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_POST, 1);
     curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Evita problemas de certificados en Render
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); 
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
     curl_exec($ch);
     curl_close($ch);
 }
